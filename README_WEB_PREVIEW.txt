@@ -1,8 +1,7 @@
 ACT II — WAR MACHINES // WEB PLAY PREVIEW
 
-Development browser preview only.
-It starts directly in District Zero so gameplay can be reviewed while the official
-animated menu and opening cinematic remain protected in the Windows package flow.
+No-thread development browser preview for static hosting such as GitHub Pages.
+It starts directly in District Zero.
 
 Controls:
 WASD      Move
