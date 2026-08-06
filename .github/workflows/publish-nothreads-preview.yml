@@ -1,4 +1,4 @@
-name: Publish No-Thread Godot Preview
+name: Publish Mission 068 Web Preview
 
 on:
   workflow_dispatch:
@@ -19,16 +19,16 @@ jobs:
       - name: Checkout deployment repository
         uses: actions/checkout@v4
 
-      - name: Download verified no-thread Web artifact
+      - name: Download verified Mission 068 artifact
         shell: bash
         run: |
           set -euo pipefail
           curl --fail --location --retry 5 \
-            'https://sdmntprnorthcentralus.oaiusercontent.com/files/00000000-cb48-822f-9c1a-a30b2700dccc/raw?se=2026-08-06T09%3A32%3A31Z&sp=r&sv=2026-02-06&sr=b&scid=c5be84d8-f2b5-57b6-8cf9-ebfed62a8407&skoid=d1cabc79-3240-4866-94fe-6005330cb49e&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-06T05%3A53%3A52Z&ske=2026-08-07T05%3A53%3A52Z&sks=b&skv=2026-02-06&sig=bzuI%2BqJwtd6B5Ocvmt57yHNpwR/j43%2BRV8HhXD3Katg%3D' \
+            'https://sdmntpreastus.oaiusercontent.com/files/00000000-8790-81f9-a26f-d35a91a102bc/raw?se=2026-08-06T10%3A52%3A00Z&sp=r&sv=2026-02-06&sr=b&scid=7c639906-02bd-5f45-9b8c-1c5ddfa4b84e&skoid=e9d2f8b1-028a-4cff-8eb1-d0e66fbefcca&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-06T05%3A13%3A43Z&ske=2026-08-07T05%3A13%3A43Z&sks=b&skv=2026-02-06&sig=fBaA6xv7OH1ORMWRTfkPR376PZpDCafttsWbM0ELc5A%3D' \
             --output artifact.zip
           test -s artifact.zip
           unzip -q artifact.zip -d artifact
-          nested_zip="$(find artifact -maxdepth 1 -type f -name '*NOTHREADS*.zip' -print -quit)"
+          nested_zip="$(find artifact -maxdepth 2 -type f -name '*MISSION-068*.zip' -print -quit)"
           test -n "${nested_zip}"
           mkdir -p site
           unzip -q "${nested_zip}" -d site
@@ -36,8 +36,16 @@ jobs:
           test -s site/index.js
           test -s site/index.wasm
           test -s site/index.pck
+          grep -Fq 'const GODOT_THREADS_ENABLED = false' site/index.html
           ! grep -Fq 'SharedArrayBuffer' site/index.html
           ! grep -Fq 'Cross-Origin Isolation' site/index.html
+          printf '%s\n' \
+            'MISSION=068' \
+            'SOURCE_COMMIT=06791193d65154d7e131e094229b70f0517002fc' \
+            'WORKFLOW_RUN=31094271402' \
+            'ARTIFACT_ID=8964832315' \
+            'VISUAL_PROOF=PASS' \
+            > site/MISSION_068_BUILD.txt
 
       - name: Replace published site files
         shell: bash
@@ -54,12 +62,12 @@ jobs:
           rm -rf artifact.zip artifact site
           touch .nojekyll
 
-      - name: Commit no-thread preview
+      - name: Commit Mission 068 preview
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'kamdridi-web-publisher'
           git config user.email 'actions@users.noreply.github.com'
           git add -A
-          git commit -m 'Deploy verified no-thread Godot Web preview' || exit 0
+          git commit -m 'Deploy Mission 068 verified Web visual parity build' || exit 0
           git push origin master
