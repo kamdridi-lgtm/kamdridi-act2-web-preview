@@ -1,4 +1,4 @@
-name: Deploy No-Thread Preview to GitHub Pages
+name: Deploy Mission 068 to GitHub Pages
 
 on:
   workflow_dispatch:
@@ -15,6 +15,7 @@ on:
       - 'index.apple-touch-icon.png'
       - 'index.audio.worklet.js'
       - 'index.audio.position.worklet.js'
+      - 'MISSION_068_BUILD.txt'
       - '.github/workflows/deploy-pages-actions.yml'
 
 permissions:
@@ -23,7 +24,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: github-pages
+  group: github-pages-mission-068
   cancel-in-progress: true
 
 jobs:
@@ -34,10 +35,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - name: Checkout no-thread site
+      - name: Checkout Mission 068 site
         uses: actions/checkout@v4
 
-      - name: Verify no-thread Godot export
+      - name: Verify Mission 068 no-thread export
         shell: bash
         run: |
           set -euo pipefail
@@ -45,22 +46,27 @@ jobs:
           test -s index.js
           test -s index.wasm
           test -s index.pck
+          test -s MISSION_068_BUILD.txt
+          grep -Fq 'MISSION=068' MISSION_068_BUILD.txt
+          grep -Fq 'SOURCE_COMMIT=06791193d65154d7e131e094229b70f0517002fc' MISSION_068_BUILD.txt
+          grep -Fq 'VISUAL_PROOF=PASS' MISSION_068_BUILD.txt
           grep -Fq 'const GODOT_THREADS_ENABLED = false;' index.html
           grep -Fq '"emscriptenPoolSize":0' index.html
           grep -Fq '"godotPoolSize":0' index.html
+          ! grep -Fq 'SharedArrayBuffer' index.html
           ! grep -Fq 'Cross-Origin Isolation - Check that the web server configuration sends the correct headers.' index.html
-          echo 'GODOT_NO_THREAD_STATIC_HOSTING: PASS'
+          echo 'MISSION_068_GITHUB_PAGES_GATE: PASS'
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
 
-      - name: Upload no-thread site
+      - name: Upload Mission 068 site
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
 
-      - name: Deploy no-thread site
+      - name: Deploy Mission 068 site
         id: deployment
         uses: actions/deploy-pages@v4
