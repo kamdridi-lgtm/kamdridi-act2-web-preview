@@ -1,0 +1,65 @@
+name: Publish No-Thread Godot Preview
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/publish-nothreads-preview.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout deployment repository
+        uses: actions/checkout@v4
+
+      - name: Download verified no-thread Web artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 5 \
+            'https://sdmntprnorthcentralus.oaiusercontent.com/files/00000000-cb48-822f-9c1a-a30b2700dccc/raw?se=2026-08-06T09%3A32%3A31Z&sp=r&sv=2026-02-06&sr=b&scid=c5be84d8-f2b5-57b6-8cf9-ebfed62a8407&skoid=d1cabc79-3240-4866-94fe-6005330cb49e&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-08-06T05%3A53%3A52Z&ske=2026-08-07T05%3A53%3A52Z&sks=b&skv=2026-02-06&sig=bzuI%2BqJwtd6B5Ocvmt57yHNpwR/j43%2BRV8HhXD3Katg%3D' \
+            --output artifact.zip
+          test -s artifact.zip
+          unzip -q artifact.zip -d artifact
+          nested_zip="$(find artifact -maxdepth 1 -type f -name '*NOTHREADS*.zip' -print -quit)"
+          test -n "${nested_zip}"
+          mkdir -p site
+          unzip -q "${nested_zip}" -d site
+          test -s site/index.html
+          test -s site/index.js
+          test -s site/index.wasm
+          test -s site/index.pck
+          ! grep -Fq 'SharedArrayBuffer' site/index.html
+          ! grep -Fq 'Cross-Origin Isolation' site/index.html
+
+      - name: Replace published site files
+        shell: bash
+        run: |
+          set -euo pipefail
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name '.git' \
+            ! -name '.github' \
+            ! -name 'artifact.zip' \
+            ! -name 'artifact' \
+            ! -name 'site' \
+            -exec rm -rf {} +
+          cp -a site/. .
+          rm -rf artifact.zip artifact site
+          touch .nojekyll
+
+      - name: Commit no-thread preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'kamdridi-web-publisher'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git commit -m 'Deploy verified no-thread Godot Web preview' || exit 0
+          git push origin master
